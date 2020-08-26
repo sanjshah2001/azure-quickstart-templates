@@ -252,7 +252,7 @@
         "upgradePolicy": {
           "mode": "Automatic"
         },
-        "singlePlacementGroup": "[parameters('singlePlacementGroup')]",
+        "singlePlacementGroup": false,
         "platformFaultDomainCount": 1,
         "virtualMachineProfile": {
           "storageProfile": {
