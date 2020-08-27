@@ -252,8 +252,8 @@
         "upgradePolicy": {
           "mode": "Automatic"
         },
-        "singlePlacementGroup": false,
-        "platformFaultDomainCount": 1,
+        "placementGroup": false,
+        "faultDomainCount": 1,
         "virtualMachineProfile": {
           "storageProfile": {
             "osDisk": {
