@@ -248,13 +248,13 @@
         "capacity": "[parameters('instanceCount')]"
       },
       "properties": {
+        "singlePlacementGroup": false,
+        "platformFaultDomainCount": 1,
         "overprovision": "true",
         "upgradePolicy": {
           "mode": "Automatic"
         },
-        "placementGroup": false,
-        "faultDomainCount": 1,
-        "virtualMachineProfile": {
+       "virtualMachineProfile": {
           "storageProfile": {
             "osDisk": {
               "caching": "ReadWrite",
