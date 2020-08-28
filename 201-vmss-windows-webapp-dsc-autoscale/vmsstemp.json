@@ -1,0 +1,157 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "vmssName": {
+            "type": "string"
+        },
+        "vmSku": {
+            "type": "string"
+        },
+        "adminUsername": {
+            "type": "string"
+        },
+        "instanceCount": {
+            "type": "int"
+        },
+        "ImagePublisher": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "The image publisher."
+            }
+        },
+        "ImageOffer": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "The image offer"
+            }
+        },
+        "ImageSku": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "The SKU of the image."
+            }
+        },
+        "ImageVersion": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "The version of the image"
+            }
+        },
+        "ImageId": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "The image id for SIG."
+            }
+        },
+        "singlePlacementGroup": {
+            "type": "string"
+        },
+        "platformFaultDomainCount": {
+            "type": "int",
+            "defaultValue": 5
+        },
+        "enableAcceleratedNetworking": {
+            "type": "string"
+        },
+        "upgradeMode": {
+            "type": "string"
+        },
+        "adminPassword": {
+            "type": "securestring"
+        },
+        "osDiskSizeGB": {
+          "type": "int"
+        },
+        "vmssTags" : {
+            "type":"object",
+            "defaultValue": {
+                "PreprovisionedVMEscrowViaAZSM": "true"
+            }
+        }
+    },
+    "variables": {
+      "namingInfix": "[toLower(substring(concat(parameters('vmssName'), uniqueString(resourceGroup().id)), 0, 9))]",
+      "vnetID": "[resourceId(concat('rg-StaticResReuse-',resourceGroup().location), 'Microsoft.Network/virtualNetworks', 'StaticVNET')]",
+      "nsgRef": "[resourceId(concat('rg-StaticResReuse-',resourceGroup().location), 'Microsoft.Network/networkSecurityGroups', 'StaticNSG')]",
+      "subnetRef": "[concat(variables('vnetID'),'/subnets/', 'StaticSubnet')]"
+    },
+    "resources": [
+      {
+        "type": "Microsoft.Compute/virtualMachineScaleSets",
+        "sku": {
+          "name": "[parameters('vmSku')]",
+          "tier": "Standard",
+          "capacity": "[parameters('instanceCount')]"
+        },
+        "name": "[parameters('vmssName')]",
+        "apiVersion": "2018-06-01",
+        "location": "[resourceGroup().location]",
+        "tags": "[parameters('vmssTags')]",
+        "properties": {
+          "overprovision": false,
+          "upgradePolicy": {
+            "mode": "[parameters('upgradeMode')]"
+          },
+          "singlePlacementGroup": "[parameters('singlePlacementGroup')]",
+          "platformFaultDomainCount": "[parameters('platformFaultDomainCount')]",
+          "virtualMachineProfile": {
+            "storageProfile": {
+              "imageReference": {
+                "publisher": "[if(empty(parameters('ImagePublisher')), json('null'), parameters('ImagePublisher'))]",
+                "offer": "[if(empty(parameters('ImageOffer')), json('null'), parameters('ImageOffer'))]",
+                "sku": "[if(empty(parameters('ImageSku')), json('null'), parameters('ImageSku'))]",
+                "version": "[if(empty(parameters('ImageVersion')), json('null'), parameters('ImageVersion'))]",
+                "id": "[if(empty(parameters('ImageId')), json('null'), parameters('ImageId'))]"
+              },
+              "osDisk": {
+                "createOption": "FromImage",
+                "caching": "ReadWrite",
+                "diskSizeGB": "[parameters('osDiskSizeGB')]"
+              }
+            },
+            "osProfile": {
+              "computerNamePrefix": "[variables('namingInfix')]",
+              "adminUsername": "[parameters('adminUsername')]",
+              "adminPassword": "[parameters('adminPassword')]",
+              "linuxConfiguration": {
+                  "disablePasswordAuthentication": false
+              },
+              "customData": "ZWNobyAiSGVsbG8gd29ybGQi"
+            },
+            "networkProfile": {
+              "networkInterfaceConfigurations": [
+                {
+                  "name": "[concat(parameters('vmssName'), 'Nic')]",
+                  "properties": {
+                    "primary": true,
+                    "enableAcceleratedNetworking": "[parameters('enableAcceleratedNetworking')]",
+                    "ipConfigurations": [
+                      {
+                        "name": "[concat(parameters('vmssName'), 'IpConfig')]",
+                        "properties": {
+                          "subnet": {
+                            "id": "[variables('subnetRef')]"
+                          }
+                        }
+                      }
+                    ],
+                    "networkSecurityGroup": {
+                      "id": "[variables('nsgRef')]"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "dependsOn": [
+        ]
+      }
+    ]
+  }
